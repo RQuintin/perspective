@@ -179,7 +179,7 @@ t_gstate::fill_master_table(const t_data_table* flattened) {
 
 void
 t_gstate::update_master_table(const t_data_table* flattened) {
-    if (size() == 0) {
+    if (num_rows() == 0) {
         fill_master_table(flattened);
         return;
     }
@@ -415,21 +415,6 @@ t_gstate::read_column(const std::string& colname, const std::vector<t_tscalar>& 
     std::swap(rval, out_data);
 }
 
-void
-t_gstate::read_column(const std::string& colname, std::vector<t_tscalar>& out_data) const {
-    std::shared_ptr<const t_column> col = m_table->get_const_column(colname);
-    const t_column* col_ = col.get();
-    t_uindex col_size = col_->size();
-    std::vector<t_tscalar> rval(col_size);
-
-    for (t_index idx = 0; idx < col_size; ++idx) {
-        rval[idx].set(col_->get_scalar(idx));
-    }
-
-    std::swap(rval, out_data);
-}
-
-
 t_tscalar
 t_gstate::get(t_tscalar pkey, const std::string& colname) const {
     t_mapping::const_iterator iter = m_mapping.find(pkey);
@@ -571,7 +556,7 @@ t_gstate::_get_pkeyed_table(const std::vector<t_tscalar>& pkeys) const {
 
 t_data_table*
 t_gstate::_get_pkeyed_table(const t_schema& schema, const std::vector<t_tscalar>& pkeys) const {
-    t_mask mask(size());
+    t_mask mask(num_rows());
 
     for (const auto& pkey : pkeys) {
         auto lk = lookup(pkey);
@@ -698,8 +683,13 @@ t_gstate::_get_pkeyed_table(const t_schema& schema, const t_mask& mask) const {
 }
 
 t_uindex
-t_gstate::size() const {
-    return m_table->size();
+t_gstate::num_rows() const {
+    return m_table->num_rows();
+}
+
+t_uindex
+t_gstate::num_columns() const {
+    return m_table->num_columns();
 }
 
 std::vector<t_tscalar>

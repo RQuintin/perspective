@@ -199,6 +199,24 @@ View<t_ctx0>::column_names(bool skip, std::int32_t depth) const {
     return names;
 }
 
+// template <>
+// std::vector<std::vector<t_tscalar>>
+// View<t_ctxunit>::column_names(bool skip, std::int32_t depth) const {
+//     std::vector<std::vector<t_tscalar>> names;
+
+//     for (t_uindex key = 0, max = m_ctx->get_column_count(); key != max; ++key) {
+//         const std::string& name = m_ctx->get_column_name(key);
+//         if (name.to_string() == "psp_okey") {
+//             continue;
+//         };
+//         std::vector<t_tscalar> col_path(1);
+//         col_path[0] = name;
+//         names.push_back(col_path);
+//     }
+
+//     return names;
+// }
+
 template <typename CTX_T>
 std::vector<std::vector<t_tscalar>>
 View<CTX_T>::column_paths() const {
