@@ -374,12 +374,12 @@ t_gstate::get_table() const {
 void
 t_gstate::read_column(const std::string& colname, const std::vector<t_tscalar>& pkeys,
     std::vector<t_tscalar>& out_data) const {
-    t_index num = pkeys.size();
+    t_index num_rows = pkeys.size();
     std::shared_ptr<const t_column> col = m_table->get_const_column(colname);
     const t_column* col_ = col.get();
-    std::vector<t_tscalar> rval(num);
+    std::vector<t_tscalar> rval(num_rows);
 
-    for (t_index idx = 0; idx < num; ++idx) {
+    for (t_index idx = 0; idx < num_rows; ++idx) {
         t_mapping::const_iterator iter = m_mapping.find(pkeys[idx]);
         if (iter != m_mapping.end()) {
             rval[idx].set(col_->get_scalar(iter->second));
@@ -398,13 +398,13 @@ t_gstate::read_column(const std::string& colname, const std::vector<t_tscalar>& 
 void
 t_gstate::read_column(const std::string& colname, const std::vector<t_tscalar>& pkeys,
     std::vector<double>& out_data, bool include_nones) const {
-    t_index num = pkeys.size();
+    t_index num_rows = pkeys.size();
     std::shared_ptr<const t_column> col = m_table->get_const_column(colname);
     const t_column* col_ = col.get();
 
     std::vector<double> rval;
-    rval.reserve(num);
-    for (t_index idx = 0; idx < num; ++idx) {
+    rval.reserve(num_rows);
+    for (t_index idx = 0; idx < num_rows; ++idx) {
         t_mapping::const_iterator iter = m_mapping.find(pkeys[idx]);
         if (iter != m_mapping.end()) {
             auto tscalar = col_->get_scalar(iter->second);
@@ -422,15 +422,24 @@ t_gstate::read_column(
     t_uindex start_idx,
     t_uindex end_idx,
     std::vector<t_tscalar>& out_data) const {
-    t_index num = end_idx - start_idx;
+    t_index num_rows = end_idx - start_idx;
+
+    // Don't read invalid row indices.
+    if (num_rows <= 0) {
+        return;
+    }
+
     std::shared_ptr<const t_column> col = m_table->get_const_column(colname);
     const t_column* col_ = col.get();
 
-    std::vector<t_tscalar> rval;
-    rval.reserve(num);
-    for (t_index idx = start_idx; idx < end_idx; ++idx) {
-        rval.push_back(col_->get_scalar(idx));
+    std::vector<t_tscalar> rval(num_rows);
+
+    t_uindex i = 0;
+    for (t_uindex idx = start_idx; idx < end_idx; ++idx) {
+        rval[i] = col_->get_scalar(idx);
+        i++;
     }
+
     std::swap(rval, out_data);
 }
 
@@ -439,15 +448,16 @@ t_gstate::read_column(
     const std::string& colname, 
     const std::vector<t_uindex>& row_indices,
     std::vector<t_tscalar>& out_data) const {
-    t_index num = row_indices.size();
     std::shared_ptr<const t_column> col = m_table->get_const_column(colname);
     const t_column* col_ = col.get();
 
-    std::vector<t_tscalar> rval;
-    rval.reserve(num);
+    t_index num_rows = row_indices.size();
+    std::vector<t_tscalar> rval(num_rows);
 
-    for (const t_uindex idx : row_indices) {
-        rval.push_back(col_->get_scalar(idx));
+    t_uindex i = 0;
+    for (auto idx : row_indices) {
+        rval[i] = col_->get_scalar(idx);
+        i++;
     }
 
     std::swap(rval, out_data);

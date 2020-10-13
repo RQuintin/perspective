@@ -143,6 +143,7 @@ export default function(Module) {
         const table_columns = this.table.columns();
 
         this.is_unit_config =
+            this.table.index === "" &&
             sides === 0 &&
             isEqual(this.view_config.columns, table_columns) &&
             this.view_config.row_pivots.length === 0 &&

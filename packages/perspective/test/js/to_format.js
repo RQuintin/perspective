@@ -46,6 +46,65 @@ module.exports = perspective => {
             table.delete();
         });
 
+        it("should filter out invalid start rows & columns", async function() {
+            let table = perspective.table(int_float_string_data);
+            let view = table.view();
+            let json = await view.to_json({
+                start_row: 5,
+                start_col: 5
+            });
+            expect(json).toEqual([]);
+            view.delete();
+            table.delete();
+        });
+
+        it("should filter out invalid start rows based on view", async function() {
+            let table = perspective.table(int_float_string_data);
+            let view = table.view({
+                filter: [["float", ">", 3.5]]
+            });
+
+            // valid on view() but not this filtered view
+            let json = await view.to_json({
+                start_row: 3
+            });
+
+            expect(json).toEqual([]);
+
+            view.delete();
+            table.delete();
+        });
+
+        it("should filter out invalid start columns based on view", async function() {
+            let table = perspective.table(int_float_string_data);
+            let view = table.view({
+                columns: ["float", "int"]
+            });
+
+            let json = await view.to_json({
+                start_col: 2
+            });
+
+            expect(json).toEqual([{}, {}, {}, {}]);
+            view.delete();
+            table.delete();
+        });
+
+        it("should filter out invalid start rows & columns based on view", async function() {
+            let table = perspective.table(int_float_string_data);
+            let view = table.view({
+                columns: ["float", "int"],
+                filter: [["float", ">", 3.5]]
+            });
+            let json = await view.to_json({
+                start_row: 5,
+                start_col: 5
+            });
+            expect(json).toEqual([]);
+            view.delete();
+            table.delete();
+        });
+
         it("should respect start/end rows", async function() {
             let table = perspective.table(int_float_string_data);
             let view = table.view();

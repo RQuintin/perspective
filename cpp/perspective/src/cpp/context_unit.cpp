@@ -109,8 +109,8 @@ t_ctxunit::unity_get_column_expanded(t_uindex idx) const {
 }
 
 /**
- * @brief Given a start/end row and column index, return the underlying data for the requested
- * subset.
+ * @brief Given a start/end row and column index, return the underlying data
+ * for the requested subset.
  *
  * @param start_row
  * @param end_row
@@ -122,6 +122,7 @@ std::vector<t_tscalar>
 t_ctxunit::get_data(t_index start_row, t_index end_row, t_index start_col, t_index end_col) const {
     t_uindex ctx_nrows = get_row_count();
     t_uindex ctx_ncols = get_column_count();
+
     auto ext = sanitize_get_data_extents(
         ctx_nrows, ctx_ncols, start_row, end_row, start_col, end_col);
 
@@ -165,8 +166,6 @@ t_ctxunit::get_data(const std::vector<t_uindex>& rows) const {
     std::vector<t_tscalar> values(rows.size() * stride);
 
     auto none = mknone();
-
-    const std::vector<std::string>& columns = m_schema.columns();
 
     for (t_uindex cidx = 0; cidx < stride; ++cidx) {
         std::vector<t_tscalar> out_data(rows.size());
@@ -254,11 +253,11 @@ t_rowdelta
 t_ctxunit::get_row_delta() {
     bool rows_changed = m_rows_changed;
     tsl::hopscotch_set<t_tscalar> pkeys = get_delta_pkeys();
-    std::vector<t_tscalar> pkey_vector(pkeys.size());
+    std::vector<t_tscalar> pkey_vector(pkeys.begin(), pkeys.end());
 
-    // Copy from set to vector for get_data, which only (for now) takes a
-    // vector of primary keys.
-    std::copy(pkeys.begin(), pkeys.end(), pkey_vector.begin());
+    // Sort pkeys - they will always be integers >= 0, as the table has
+    // no index set.
+    std::sort(pkey_vector.begin(), pkey_vector.end());
 
     std::vector<t_tscalar> data = get_data(pkey_vector);
     t_rowdelta rval(rows_changed, pkey_vector.size(), data);
