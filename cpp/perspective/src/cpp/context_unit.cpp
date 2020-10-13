@@ -191,11 +191,9 @@ t_ctxunit::get_data(const std::vector<t_tscalar>& pkeys) const {
 
     auto none = mknone();
 
-    const std::vector<std::string>& columns = m_schema.columns();
-
     for (t_uindex cidx = 0; cidx < stride; ++cidx) {
         std::vector<t_tscalar> out_data(pkeys.size());
-        m_gstate->read_column(columns[cidx], pkeys, out_data);
+        m_gstate->read_column(m_config.col_at(cidx), pkeys, out_data);
 
         for (t_uindex ridx = 0; ridx < pkeys.size(); ++ridx) {
             auto v = out_data[ridx];
@@ -222,7 +220,14 @@ t_ctxunit::get_column_name(t_index idx) {
 
 std::vector<t_tscalar>
 t_ctxunit::get_pkeys(const std::vector<std::pair<t_uindex, t_uindex>>& cells) const {
-    tsl::hopscotch_set<t_tscalar> all_pkeys;
+    // Validate cells
+    t_index num_rows = get_row_count();
+
+    for (t_index idx = 0, loop_end = cells.size(); idx < loop_end; ++idx) {
+        t_index ridx = cells[idx].first;
+        if (ridx >= num_rows)
+            return {};
+    }
 
     std::set<t_index> all_rows;
 
@@ -233,11 +238,12 @@ t_ctxunit::get_pkeys(const std::vector<std::pair<t_uindex, t_uindex>>& cells) co
     std::shared_ptr<const t_data_table> master_table = m_gstate->get_table();
     std::shared_ptr<const t_column> pkey_sptr = master_table->get_const_column("psp_pkey");
 
-    std::vector<t_tscalar> rval;
-    rval.reserve(all_rows.size());
+    std::vector<t_tscalar> rval(all_rows.size());
 
+    t_uindex i = 0;
     for (auto ridx : all_rows) {
-        rval.push_back(pkey_sptr->get_scalar(ridx));
+        rval[i] = pkey_sptr->get_scalar(ridx);
+        i++;
     }
 
     return rval;
