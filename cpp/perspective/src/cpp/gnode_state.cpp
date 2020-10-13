@@ -8,9 +8,10 @@
  */
 
 #include <perspective/first.h>
+#include <perspective/context_unit.h>
+#include <perspective/context_zero.h>
 #include <perspective/context_one.h>
 #include <perspective/context_two.h>
-#include <perspective/context_zero.h>
 #include <perspective/gnode_state.h>
 #include <perspective/mask.h>
 #include <perspective/sym_table.h>
@@ -412,6 +413,43 @@ t_gstate::read_column(const std::string& colname, const std::vector<t_tscalar>& 
             }
         }
     }
+    std::swap(rval, out_data);
+}
+
+void
+t_gstate::read_column(
+    const std::string& colname,
+    t_uindex start_idx,
+    t_uindex end_idx,
+    std::vector<t_tscalar>& out_data) const {
+    t_index num = end_idx - start_idx;
+    std::shared_ptr<const t_column> col = m_table->get_const_column(colname);
+    const t_column* col_ = col.get();
+
+    std::vector<t_tscalar> rval;
+    rval.reserve(num);
+    for (t_index idx = start_idx; idx < end_idx; ++idx) {
+        rval.push_back(col_->get_scalar(idx));
+    }
+    std::swap(rval, out_data);
+}
+
+void
+t_gstate::read_column(
+    const std::string& colname, 
+    const std::vector<t_uindex>& row_indices,
+    std::vector<t_tscalar>& out_data) const {
+    t_index num = row_indices.size();
+    std::shared_ptr<const t_column> col = m_table->get_const_column(colname);
+    const t_column* col_ = col.get();
+
+    std::vector<t_tscalar> rval;
+    rval.reserve(num);
+
+    for (const t_uindex idx : row_indices) {
+        rval.push_back(col_->get_scalar(idx));
+    }
+
     std::swap(rval, out_data);
 }
 

@@ -20,8 +20,8 @@ namespace perspective {
 
 t_ctxunit::t_ctxunit() {}
 
-t_ctxunit::t_ctxunit(const t_schema& schema)
-    : t_ctxbase<t_ctxunit>(schema, t_config())
+t_ctxunit::t_ctxunit(const t_schema& schema, const t_config& config)
+    : t_ctxbase<t_ctxunit>(schema, config)
     , m_has_delta(false)
 {}
 
@@ -60,7 +60,52 @@ t_ctxunit::get_row_count() const {
 
 t_index
 t_ctxunit::get_column_count() const {
-    return m_gstate->num_columns();
+    return m_config.get_num_columns();
+}
+
+std::vector<t_tscalar>
+t_ctxunit::unity_get_row_path(t_uindex idx) const {
+    return std::vector<t_tscalar>(mktscalar(idx));
+}
+
+std::vector<t_tscalar>
+t_ctxunit::unity_get_column_path(t_uindex idx) const {
+    return std::vector<t_tscalar>();
+}
+
+t_uindex
+t_ctxunit::unity_get_row_depth(t_uindex ridx) const {
+    return 0;
+}
+
+t_uindex
+t_ctxunit::unity_get_column_depth(t_uindex cidx) const {
+    return 0;
+}
+
+std::vector<std::string>
+t_ctxunit::unity_get_column_names() const {
+    return get_column_names();
+}
+
+t_uindex
+t_ctxunit::unity_get_column_count() const {
+    return get_column_count();
+}
+
+t_uindex
+t_ctxunit::unity_get_row_count() const {
+    return get_row_count();
+}
+
+bool
+t_ctxunit::unity_get_row_expanded(t_uindex idx) const {
+    return false;
+}
+
+bool
+t_ctxunit::unity_get_column_expanded(t_uindex idx) const {
+    return false;
 }
 
 /**
@@ -86,12 +131,12 @@ t_ctxunit::get_data(t_index start_row, t_index end_row, t_index start_col, t_ind
 
     auto none = mknone();
 
-    const std::vector<std::string>& columns = m_schema.columns();
-
     for (t_index cidx = ext.m_scol; cidx < ext.m_ecol; ++cidx) {
+        const std::string& colname = m_config.col_at(cidx);
+
         std::vector<t_tscalar> out_data(num_rows);
 
-        m_gstate->read_column(columns[cidx], start_row, end_row, out_data);
+        m_gstate->read_column(colname, start_row, end_row, out_data);
 
         for (t_index ridx = ext.m_srow; ridx < ext.m_erow; ++ridx) {
             auto v = out_data[ridx - ext.m_srow];
@@ -125,7 +170,7 @@ t_ctxunit::get_data(const std::vector<t_uindex>& rows) const {
 
     for (t_uindex cidx = 0; cidx < stride; ++cidx) {
         std::vector<t_tscalar> out_data(rows.size());
-        m_gstate->read_column(columns[cidx], rows, out_data);
+        m_gstate->read_column(m_config.col_at(cidx), rows, out_data);
 
         for (t_uindex ridx = 0; ridx < rows.size(); ++ridx) {
             auto v = out_data[ridx];
@@ -166,20 +211,37 @@ t_ctxunit::get_data(const std::vector<t_tscalar>& pkeys) const {
     return values;
 }
 
-std::string
-t_ctxunit::get_column_name(t_index idx) const {
-    const std::vector<std::string>& columns = m_schema.columns();
+t_tscalar
+t_ctxunit::get_column_name(t_index idx) {
+    std::string empty("");
 
-    if (idx >= columns.size()) {
-       return "";
-    }
+    if (idx >= get_column_count())
+        return m_symtable.get_interned_tscalar(empty.c_str());
 
-    return columns[idx];
+    return m_symtable.get_interned_tscalar(m_config.col_at(idx).c_str());
 }
 
 std::vector<t_tscalar>
 t_ctxunit::get_pkeys(const std::vector<std::pair<t_uindex, t_uindex>>& cells) const {
-    PSP_COMPLAIN_AND_ABORT("Not implemented yet");
+    tsl::hopscotch_set<t_tscalar> all_pkeys;
+
+    std::set<t_index> all_rows;
+
+    for (t_index idx = 0, loop_end = cells.size(); idx < loop_end; ++idx) {
+        all_rows.insert(cells[idx].first);
+    }
+
+    std::shared_ptr<const t_data_table> master_table = m_gstate->get_table();
+    std::shared_ptr<const t_column> pkey_sptr = master_table->get_const_column("psp_pkey");
+
+    std::vector<t_tscalar> rval;
+    rval.reserve(all_rows.size());
+
+    for (auto ridx : all_rows) {
+        rval.push_back(pkey_sptr->get_scalar(ridx));
+    }
+
+    return rval;
 }
 
 /**
@@ -224,6 +286,9 @@ bool
 t_ctxunit::get_deltas_enabled() const {
     return true;
 }
+
+void
+t_ctxunit::set_deltas_enabled(bool enabled_state) {}
 
 t_index
 t_ctxunit::sidedness() const {
@@ -321,13 +386,12 @@ t_ctxunit::get_column_dtype(t_uindex idx) const {
     if (idx >= static_cast<t_uindex>(get_column_count()))
         return DTYPE_NONE;
 
-    const std::vector<std::string>& columns = m_schema.columns();
-    const std::string& column_name = get_column_name(idx);
+    auto cname = m_config.col_at(idx);
 
-    if (!m_schema.has_column(column_name))
+    if (!m_schema.has_column(cname))
         return DTYPE_NONE;
 
-    return m_schema.get_dtype(column_name);
+    return m_schema.get_dtype(cname);
 }
 
 void

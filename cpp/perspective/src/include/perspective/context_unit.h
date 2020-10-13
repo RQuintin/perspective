@@ -24,13 +24,15 @@ class PERSPECTIVE_EXPORT t_ctxunit : public t_ctxbase<t_ctxunit> {
 public:
     t_ctxunit();
 
-    t_ctxunit(const t_schema& schema);
+    t_ctxunit(const t_schema& schema, const t_config& config);
 
     ~t_ctxunit();
 
     perspective::t_index get_row_count() const;
 
     perspective::t_index get_column_count() const;
+
+    using t_ctxbase<t_ctxunit>::get_data;
 
     std::vector<t_tscalar> get_data(
         t_index start_row, t_index end_row, t_index start_col, t_index end_col) const;
@@ -62,6 +64,7 @@ public:
     t_index sidedness() const;
 
     bool get_deltas_enabled() const;
+    void set_deltas_enabled(bool enabled_state);
 
     std::vector<t_tscalar> get_pkeys(const std::vector<std::pair<t_uindex, t_uindex>>& cells) const;
 
@@ -94,13 +97,27 @@ public:
 
     std::shared_ptr<t_data_table> get_table() const;
 
-    std::string get_column_name(t_index idx) const;
+    t_tscalar get_column_name(t_index idx);
 
     std::vector<std::string> get_column_names() const;
 
     const tsl::hopscotch_set<t_tscalar>& get_delta_pkeys() const;
 
-    using t_ctxbase<t_ctxunit>::get_data;
+    // Unity api
+    std::vector<t_tscalar> unity_get_row_path(t_uindex idx) const;
+    std::vector<t_tscalar> unity_get_column_path(t_uindex idx) const;
+    t_uindex unity_get_row_depth(t_uindex ridx) const;
+    t_uindex unity_get_column_depth(t_uindex cidx) const;
+    std::vector<std::string> unity_get_column_names() const;
+    std::vector<std::string> unity_get_column_display_names() const;
+    std::string unity_get_column_name(t_uindex idx) const;
+    std::string unity_get_column_display_name(t_uindex idx) const;
+    t_uindex unity_get_column_count() const;
+    t_uindex unity_get_row_count() const;
+    t_data_table unity_get_table() const;
+    bool unity_get_row_expanded(t_uindex idx) const;
+    bool unity_get_column_expanded(t_uindex idx) const;
+    void unity_init_load_step_end();
 
 protected:
     void add_delta_pkey(t_tscalar pkey);
