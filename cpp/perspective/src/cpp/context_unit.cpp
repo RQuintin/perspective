@@ -258,8 +258,7 @@ t_ctxunit::get_pkeys(const std::vector<std::pair<t_uindex, t_uindex>>& cells) co
 t_rowdelta
 t_ctxunit::get_row_delta() {
     bool rows_changed = m_rows_changed;
-    tsl::hopscotch_set<t_tscalar> pkeys = get_delta_pkeys();
-    std::vector<t_tscalar> pkey_vector(pkeys.begin(), pkeys.end());
+    std::vector<t_tscalar> pkey_vector(m_delta_pkeys.begin(), m_delta_pkeys.end());
 
     // Sort pkeys - they will always be integers >= 0, as the table has
     // no index set.
@@ -324,9 +323,10 @@ t_ctxunit::notify(const t_data_table& flattened, const t_data_table& delta,
 
     bool delete_encountered = false;
 
-    // Context does not have filters applied
     for (t_uindex idx = 0; idx < nrecs; ++idx) {
-        t_tscalar pkey = m_symtable.get_interned_tscalar(pkey_col->get_scalar(idx));
+        // pkeys are always integers >= 0 - no need to use internal
+        // symtable to dereference.
+        t_tscalar pkey = pkey_col->get_scalar(idx);
         std::uint8_t op_ = *(op_col->get_nth<std::uint8_t>(idx));
         t_op op = static_cast<t_op>(op_);
 
@@ -361,7 +361,7 @@ t_ctxunit::notify(const t_data_table& flattened) {
     m_has_delta = true;
 
     for (t_uindex idx = 0; idx < nrecs; ++idx) {
-        t_tscalar pkey = m_symtable.get_interned_tscalar(pkey_col->get_scalar(idx));
+        t_tscalar pkey = pkey_col->get_scalar(idx);
 
         // Add primary key to track row delta
         add_delta_pkey(pkey);

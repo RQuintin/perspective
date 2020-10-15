@@ -313,8 +313,7 @@ t_ctx0::get_step_delta(t_index bidx, t_index eidx) {
 t_rowdelta
 t_ctx0::get_row_delta() {
     bool rows_changed = m_rows_changed || !m_traversal->empty_sort_by();
-    tsl::hopscotch_set<t_tscalar> pkeys = get_delta_pkeys();
-    std::vector<t_uindex> rows = m_traversal->get_row_indices(pkeys);
+    std::vector<t_uindex> rows = m_traversal->get_row_indices(m_delta_pkeys);
     std::sort(rows.begin(), rows.end());
     std::vector<t_tscalar> data = get_data(rows);
     t_rowdelta rval(rows_changed, rows.size(), data);
