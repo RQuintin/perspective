@@ -842,6 +842,23 @@ class TestView(object):
         view.on_update(cb1, mode="row")
         tbl.update(update_data)
 
+    def test_view_row_delta_zero_column_subset(self, util):
+        data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
+        update_data = {
+            "a": [5],
+            "b": [6]
+        }
+
+        def cb1(port_id, delta):
+            compare_delta(delta, {
+                "b": [6]
+            })
+
+        tbl = Table(data)
+        view = tbl.view(columns=["b"])
+        view.on_update(cb1, mode="row")
+        tbl.update(update_data)
+
     def test_view_row_delta_zero_from_schema(self, util):
         update_data = {
             "a": [5],
@@ -856,6 +873,26 @@ class TestView(object):
             "b": int
         })
         view = tbl.view()
+        view.on_update(cb1, mode="row")
+        tbl.update(update_data)
+
+    def test_view_row_delta_zero_from_schema_column_subset(self, util):
+        update_data = {
+            "a": [5],
+            "b": [6]
+        }
+
+        def cb1(port_id, delta):            
+            compare_delta(delta, {
+                "b": [6]
+            })
+
+        tbl = Table({
+            "a": int,
+            "b": int
+        })
+
+        view = tbl.view(columns=["b"])
         view.on_update(cb1, mode="row")
         tbl.update(update_data)
 
